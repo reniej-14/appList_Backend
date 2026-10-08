@@ -50,7 +50,7 @@ router.put('/update/:productId',
     body('productPriceMin')
         .notEmpty().withMessage('El precio minimo del producto es obligatorio'),
     handleInputErrors,
-    ProductController.updateProduct
+    //ProductController.updateProduct
 )
 
 router.delete('/delete/:productId',

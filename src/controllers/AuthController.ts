@@ -1,58 +1,63 @@
-import User from "../models/Usuario"
 import { Request, Response } from "express"
+import Usuario from "../models/Usuario"
 import { generateJWT } from "../utils/jwt"
+import { compararPassword, hashPassword } from "../utils/hashPassword"
 
 export class AuthController {
-    
-    static createAcount = async (req: Request, res: Response) => {
+
+    static crearCuenta = async (req: Request, res: Response) => {
         try {
-            const { email } = req.body
+            // Solo se toman los campos permitidos (nunca req.body completo)
+            const { email, password, nombre } = req.body
 
             // Prevenir duplicados
-            const userExists = await User.findOne({email})
-            if (userExists) {
-                const error = new Error('El usuario ya está registrado')
-                return res.status(409).json({error: error.message})
+            const usuarioExiste = await Usuario.findOne({ email })
+            if (usuarioExiste) {
+                return res.status(409).json({ error: 'El usuario ya está registrado' })
             }
 
-            // Crear un usuario
-            const user = new User(req.body)
+            const usuario = new Usuario({
+                email,
+                nombre,
+                password: await hashPassword(password)
+            })
+            await usuario.save()
 
-            await user.save()
-            res.send('Cuenta creada correctamente')
+            res.status(201).send('Cuenta creada correctamente')
         } catch (error) {
-            res.status(500).json({error: 'Hubo un error'})
+            res.status(500).json({ error: 'Hubo un error al crear la cuenta' })
         }
     }
 
-    static login = async (req: Request, res: Response) => {
+    static iniciarSesion = async (req: Request, res: Response) => {
         try {
             const { email, password } = req.body
-            const user = await User.findOne({email})
-            if (!user) {
-                const error = new Error('Usuario no encontrado')
-                return res.status(404).json({error: error.message})
+
+            const usuario = await Usuario.findOne({ email })
+            // Mismo mensaje si el email no existe o el password falla,
+            // para no revelar qué correos están registrados
+            if (!usuario) {
+                return res.status(401).json({ error: 'Email o password incorrectos' })
             }
 
-            if (!user.confirmed) {
-                const error = new Error('La cuenta no ha sido confirmada')
-                return res.status(401).json({error: error.message})
+            const passwordCorrecto = await compararPassword(password, usuario.password)
+            if (!passwordCorrecto) {
+                return res.status(401).json({ error: 'Email o password incorrectos' })
             }
 
-            // Revisar password
-            if (password !== user.password) {
-                const error = new Error('Password incorrecto')
-                return res.status(401).json({error: error.message})
+            // La cuenta se revisa después de validar el password
+            if (!usuario.confirmado) {
+                return res.status(403).json({ error: 'La cuenta no ha sido confirmada' })
             }
 
-            const token = generateJWT({id: user._id})
+            const token = generateJWT({ id: usuario._id })
             res.send(token)
         } catch (error) {
-            res.status(500).json({error: 'Hubo un error'})
+            res.status(500).json({ error: 'Hubo un error' })
         }
     }
 
-    static user = async (req: Request, res: Response) => {
-        return res.json(req.user)
+    static usuario = async (req: Request, res: Response) => {
+        return res.json(req.usuario)
     }
 }

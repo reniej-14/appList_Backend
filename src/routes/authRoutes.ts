@@ -1,17 +1,17 @@
-import { Router } from "express";
-import { body, param } from "express-validator";
-import { handleInputErrors } from "../middleware/validation";
-import { AuthController } from "../controllers/AuthController";
-import { authenticate } from "../middleware/auth";
+import { Router } from "express"
+import { body } from "express-validator"
+import { handleInputErrors } from "../middleware/validation"
+import { AuthController } from "../controllers/AuthController"
+import { authenticate } from "../middleware/auth"
 
 const router = Router()
 
-router.post('/create-account', 
-    body('name')
-        .notEmpty().withMessage('El nombre no puede ir vacio'),
+router.post('/create-account',
+    body('nombre')
+        .trim().notEmpty().withMessage('El nombre no puede ir vacío'),
     body('password')
-        .isLength({min: 8}).withMessage('El password es muy corto, mínimo 8 caracteres'),
-    body('password_confirmation').custom((value, {req}) => {
+        .isLength({ min: 8 }).withMessage('El password es muy corto, mínimo 8 caracteres'),
+    body('password_confirmation').custom((value, { req }) => {
         if (value !== req.body.password) {
             throw new Error('Los password no son iguales')
         }
@@ -20,7 +20,7 @@ router.post('/create-account',
     body('email')
         .isEmail().withMessage('Email no válido'),
     handleInputErrors,
-    AuthController.createAcount
+    AuthController.crearCuenta
 )
 
 router.post('/login',
@@ -29,13 +29,12 @@ router.post('/login',
     body('password')
         .notEmpty().withMessage('El password no puede ir vacío'),
     handleInputErrors,
-    AuthController.login
+    AuthController.iniciarSesion
 )
 
 router.get('/user',
     authenticate,
-    AuthController.user
+    AuthController.usuario
 )
-
 
 export default router

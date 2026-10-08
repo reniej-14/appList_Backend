@@ -50,7 +50,7 @@ export class ProductController {
         }
     }
 
-    static updateProduct = async (req: Request, res: Response) => {
+    /* static updateProduct = async (req: Request, res: Response) => {
         try {
             req.product.productName = req.body.productName
             req.product.productCategory = req.body.productCategory
@@ -62,7 +62,7 @@ export class ProductController {
         } catch (error) {
             console.log(error)
         }
-    }
+    } */
 
     static deleteProduct = async (req: Request, res: Response) => {
         try {

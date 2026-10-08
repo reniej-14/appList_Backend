@@ -1,10 +1,10 @@
 import type { Request, Response, NextFunction } from "express";
-import Product, { ProductType} from "../models/Producto";
+import Product, { IProducto} from "../models/Producto";
 
 declare global {
     namespace Express {
         interface Request {
-            product: ProductType
+            product: IProducto
         }
     }
 }
