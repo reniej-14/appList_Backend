@@ -1,4 +1,4 @@
-import User from "../models/User"
+import User from "../models/Usuario"
 import { Request, Response } from "express"
 import { generateJWT } from "../utils/jwt"
 

@@ -1,5 +1,5 @@
 import type { Request, Response, NextFunction } from "express";
-import Product, { ProductType} from "../models/Product";
+import Product, { ProductType} from "../models/Producto";
 
 declare global {
     namespace Express {
