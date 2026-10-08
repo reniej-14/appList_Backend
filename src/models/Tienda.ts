@@ -14,7 +14,7 @@ interface ITiendaModel extends Model<ITienda> {
 }
 
 const tiendaSchema = new Schema<ITienda, ITiendaModel>({
-    usuario: { type: Schema.Types.ObjectId, ref: 'Usuario', required: true, index: true },
+    usuario: { type: Schema.Types.ObjectId, ref: 'Usuario', required: true, unique: true },
     nombre: { type: String, required: true, trim: true },
     direccion: String,
     telefono: String,

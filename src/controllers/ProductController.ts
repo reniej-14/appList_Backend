@@ -1,75 +1,102 @@
 import { Request, Response } from "express"
-import Product from "../models/Producto"
+import Producto from "../models/Producto"
+import Categoria from "../models/Categoria"
 
-export class ProductController {
+export class ProductoController {
 
-    static createProduct = async (req: Request, res: Response) => {
+    static crearProducto = async (req: Request, res: Response) => {
         try {
-            const product = new Product(req.body)
+            const { codigo, nombre, precio, stock, categoria } = req.body
 
-            await product.save()
-            res.send('Producto creado correctamente')
-        } catch (error) {
-            console.log(error)
-        }
-    }
-
-    static getProductsByCategory = async (req: Request, res: Response) => {
-        try {
-            const { productCategory } = req.params
-
-            const filter = productCategory === 'Todos'
-                ? {}
-                : { productCategory }
-
-            const products = await Product.find(filter)
-
-            if (!products.length) {
-                res.send('No existen productos para esta categoría')
-            } 
-            
-            res.json(products)
-        } catch (error) {
-            console.log
-        }
-    }
-
-    static getProductById = async (req: Request, res: Response) => {
-        const { productId } = req.params
-        try {
-            const product = await Product.findById(productId)
-
-            if (!product) {
-                const error = new Error('Producto no encontrado')
-                return res.status(404).json({error: error.message})
+            if (categoria) {
+                const categoriaExiste = await Categoria.exists({ _id: categoria, tienda: req.tienda._id })
+                if (!categoriaExiste) {
+                    return res.status(404).json({ error: 'Categoría no encontrada' })
+                }
             }
 
-            res.json(product)
-        } catch (error) {
-            console.log(error)
+            const producto = new Producto({
+                tienda: req.tienda._id,   // siempre desde el servidor
+                categoria: categoria || null,
+                codigo,
+                nombre,
+                precio,
+                stock
+            })
+            await producto.save()
+
+            res.status(201).send('Producto creado correctamente')
+        } catch (error: any) {
+            if (error.code === 11000) {
+                return res.status(409).json({ error: 'Ya existe un producto con ese código' })
+            }
+            console.error(error)
+            res.status(500).json({ error: 'Hubo un error' })
         }
     }
 
-    /* static updateProduct = async (req: Request, res: Response) => {
+    static obtenerProductosPorCategoria = async (req: Request, res: Response) => {
         try {
-            req.product.productName = req.body.productName
-            req.product.productCategory = req.body.productCategory
-            req.product.productPrice = req.body.productPrice
-            req.product.productPriceMin = req.body.productPriceMin
+            const { categoriaId } = req.params
 
-            await req.product.save()
-            res.send('Producto actualizado')
+            const filtro: Record<string, unknown> = { tienda: req.tienda._id }
+            if (categoriaId.toLowerCase() !== 'todos') {
+                filtro.categoria = categoriaId
+            }
+
+            const productos = await Producto.find(filtro)
+                .populate('categoria', 'nombre')
+                .sort({ nombre: 1 })
+
+            // Siempre un arreglo; si está vacío, el frontend muestra su propio mensaje
+            res.json(productos)
         } catch (error) {
-            console.log(error)
+            console.error(error)
+            res.status(500).json({ error: 'Hubo un error' })
         }
-    } */
+    }
 
-    static deleteProduct = async (req: Request, res: Response) => {
+    static obtenerProductoPorId = async (req: Request, res: Response) => {
+        // req.producto ya viene cargado (y verificado) por productoExiste
+        res.json(req.producto)
+    }
+
+    static actualizarProducto = async (req: Request, res: Response) => {
         try {
-            await req.product.deleteOne()
+            const { codigo, nombre, precio, stock, categoria, activo } = req.body
+
+            if (categoria) {
+                const categoriaExiste = await Categoria.exists({ _id: categoria, tienda: req.tienda._id })
+                if (!categoriaExiste) {
+                    return res.status(404).json({ error: 'Categoría no encontrada' })
+                }
+            }
+
+            req.producto.codigo = codigo
+            req.producto.nombre = nombre
+            req.producto.precio = precio
+            req.producto.categoria = categoria || null
+            if (stock !== undefined) req.producto.stock = stock
+            if (activo !== undefined) req.producto.activo = activo
+
+            await req.producto.save()
+            res.send('Producto actualizado')
+        } catch (error: any) {
+            if (error.code === 11000) {
+                return res.status(409).json({ error: 'Ya existe un producto con ese código' })
+            }
+            console.error(error)
+            res.status(500).json({ error: 'Hubo un error' })
+        }
+    }
+
+    static eliminarProducto = async (req: Request, res: Response) => {
+        try {
+            await req.producto.deleteOne()
             res.send('Producto eliminado')
         } catch (error) {
-            console.log(error)
+            console.error(error)
+            res.status(500).json({ error: 'Hubo un error' })
         }
     }
 }

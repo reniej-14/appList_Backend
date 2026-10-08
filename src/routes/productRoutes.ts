@@ -1,62 +1,58 @@
-import { Router } from "express";
-import { body, param } from "express-validator";
-import { authenticate } from "../middleware/auth";
-import { handleInputErrors } from "../middleware/validation";
-import { ProductController } from "../controllers/ProductController";
-import { productExists } from "../middleware/product";
-
+import { Router } from "express"
+import { body, param } from "express-validator"
+import { authenticate } from "../middleware/auth"
+import { cargarTienda } from "../middleware/tienda"
+import { handleInputErrors } from "../middleware/validation"
+import { productoExiste } from "../middleware/producto"
+import { ProductoController } from "../controllers/ProductController"
 
 const router = Router()
 
-router.get('/:productCategory/category', 
-    param('productCategory')
-        .notEmpty().withMessage('La categoría del producto es obligatoria'),
-    handleInputErrors,
-    ProductController.getProductsByCategory
-)
+// Todas las rutas requieren usuario autenticado y su tienda
+router.use(authenticate, cargarTienda)
+router.param('productoId', productoExiste)
 
-router.use(authenticate)
+const validacionesProducto = [
+    body('codigo')
+        .trim().notEmpty().withMessage('El código del producto es obligatorio'),
+    body('nombre')
+        .trim().notEmpty().withMessage('El nombre del producto es obligatorio'),
+    body('precio')
+        .isFloat({ min: 0 }).withMessage('El precio del producto no es válido'),
+    body('stock')
+        .optional().isInt({ min: 0 }).withMessage('El stock no es válido'),
+    body('categoria')
+        .optional({ nullable: true }).isMongoId().withMessage('Categoría no válida'),
+]
+
+// "todos" o el _id de una categoría
+router.get('/:categoriaId/category',
+    param('categoriaId').custom((valor: string) => {
+        if (valor.toLowerCase() === 'todos' || /^[0-9a-fA-F]{24}$/.test(valor)) return true
+        throw new Error('Categoría no válida')
+    }),
+    handleInputErrors,
+    ProductoController.obtenerProductosPorCategoria
+)
 
 router.post('/create',
-    body('productName')
-        .notEmpty().withMessage('El nombre del producto es obligatorio'),
-    body('productCategory')
-        .notEmpty().withMessage('La categoría del producto es obligatoria'),
-    body('productPrice')
-        .notEmpty().withMessage('El precio normal del producto es obligatorio'),
-    body('productPriceMin')
-        .notEmpty().withMessage('El precio minimo del producto es obligatorio'),
+    ...validacionesProducto,
     handleInputErrors,
-    ProductController.createProduct
+    ProductoController.crearProducto
 )
 
-router.param('productId', productExists)
-
-router.get('/:productId', 
-    param('productId').isMongoId().withMessage('ID no válido'),
-    handleInputErrors,
-    ProductController.getProductById
+router.get('/:productoId',
+    ProductoController.obtenerProductoPorId
 )
 
-router.put('/update/:productId',
-    param('productId')
-        .isMongoId().withMessage('ID no válido'),
-    body('productName')
-        .notEmpty().withMessage('El nombre del producto es obligatorio'),
-    body('productCategory')
-        .notEmpty().withMessage('La categoría del producto es obligatoria'),
-    body('productPrice')
-        .notEmpty().withMessage('El precio normal del producto es obligatorio'),
-    body('productPriceMin')
-        .notEmpty().withMessage('El precio minimo del producto es obligatorio'),
+router.put('/update/:productoId',
+    ...validacionesProducto,
     handleInputErrors,
-    //ProductController.updateProduct
+    ProductoController.actualizarProducto
 )
 
-router.delete('/delete/:productId',
-    param('productId').isMongoId().withMessage('ID no válido'),
-    handleInputErrors,
-    ProductController.deleteProduct
+router.delete('/delete/:productoId',
+    ProductoController.eliminarProducto
 )
 
 export default router
