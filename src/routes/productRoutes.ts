@@ -35,7 +35,7 @@ router.get('/:categoriaId/category',
     ProductoController.obtenerProductosPorCategoria
 )
 
-router.post('/create',
+router.post('/',
     ...validacionesProducto,
     handleInputErrors,
     ProductoController.crearProducto
@@ -45,13 +45,13 @@ router.get('/:productoId',
     ProductoController.obtenerProductoPorId
 )
 
-router.put('/update/:productoId',
+router.put('/:productoId',
     ...validacionesProducto,
     handleInputErrors,
     ProductoController.actualizarProducto
 )
 
-router.delete('/delete/:productoId',
+router.delete('/:productoId',
     ProductoController.eliminarProducto
 )
 
