@@ -69,7 +69,7 @@ export class ClienteController {
 
     static actualizarCliente = async (req: Request, res: Response) => {
         try {
-            const { nombre, telefono, correo, direccion, DPI } = req.body
+            const { nombre, telefono, direccion, DPI } = req.body
 
             req.cliente.nombre = nombre
             req.cliente.telefono = telefono

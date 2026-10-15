@@ -9,6 +9,7 @@ import productRoutes from "./routes/productRoutes"
 import tiendaRoutes from "./routes/tiendaRoutes"
 import categoriaRoutes from "./routes/categoriaRoutes"
 import clienteRoutes from "./routes/clienteRoutes"
+import ventaRoutes from "./routes/ventaRoutes"
 
 dotenv.config()
 connectDB()
@@ -28,5 +29,6 @@ app.use('/api/product', productRoutes)
 app.use('/api/tienda', tiendaRoutes)
 app.use('/api/categoria', categoriaRoutes)
 app.use('/api/cliente', clienteRoutes)
+app.use('/api/venta', ventaRoutes)
 
 export default app

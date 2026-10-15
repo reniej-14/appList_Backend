@@ -35,6 +35,7 @@ export interface IVenta extends Document {
     abonos: IAbono[]
 }
 
+// Aquí se declara el método estático para que TypeScript lo reconozca
 interface IVentaModel extends Model<IVenta> {
     registrarAbono(
         tiendaId: Types.ObjectId | string,
@@ -77,8 +78,10 @@ const ventaSchema = new Schema<IVenta, IVentaModel>({
 ventaSchema.pre('validate', async function (this: IVenta) {
     if (this.isNew) {
         if (this.tipo === 'credito') {
-            this.saldoPendiente = this.total
-            this.estado = 'abierta'
+            // El saldo descuenta el abono inicial, si lo hay
+            const abonado = redondear(this.abonos.reduce((suma, a) => suma + a.monto, 0))
+            this.saldoPendiente = redondear(this.total - abonado)
+            this.estado = this.saldoPendiente > 0 ? 'abierta' : 'pagada'
         } else {
             this.saldoPendiente = 0
             this.estado = 'pagada'
